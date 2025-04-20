@@ -1,0 +1,309 @@
+import mysql.connector
+import platform
+import os
+from datetime import datetime
+
+def connect_to_datebase():
+    global conn
+    conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="Root",
+        database="carservice_center_management"
+    )
+    mycursor1=conn.cursor()
+    return conn, mycursor1
+
+def addcustomer():
+    try:
+        conn, mycursor=connect_to_datebase()
+
+        custdata1=[]
+
+        id=int(input("Enter the customer id"))
+        custdata1.append(id)
+
+        name=input("enter the Customer name")
+        custdata1.append(name)
+
+        phoneno=int(input("Enter the Customer Number"))
+        custdata1.append(phoneno)
+
+        Address=input("Enter the customer Address")
+        custdata1.append(Address)
+
+        veh_type = input("Enter the Vehicle Type")
+        custdata1.append(veh_type)
+
+        veh_no =int(input("enter the last 4digit number"))
+        custdata1.append(veh_no)
+
+        print(custdata1)
+
+
+
+        sql= '''insert into customerdetails(custid,Custname,cust_phno,Address,Vehicle_type,vehicle_number)
+                          values (%s,%s,%s,%s,%s,%s)'''
+        mycursor.execute(sql,custdata1)
+        conn.commit()
+        print("customer data sucessfully added")
+        mycursor.close()
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        conn.close()
+
+def viewcustomer():
+    try:
+        conn, mycursor = connect_to_datebase()
+        customerid=input("Enter the customer id")
+        mycursor.execute('''SELECT * FROM  customerdetails Where custid = %s''',(customerid,))
+        services = mycursor.fetchall()
+
+        conn.commit()
+
+        print("customer List")
+        for service in services:
+            print(f"id: {service[0]},custname:{service[1]},number:{service[2]},address:{service[3]},veh_type:{service[4]},veh_no:{service[5]}")
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        print("completed")
+        conn.close()
+
+
+def services():
+    try:
+        conn, mycursor = connect_to_datebase()
+
+        custdata2 =[]
+
+        id=int(input("Enter the Customer id "))
+        custdata2.append(id)
+
+        veh_purchase_date =(input(("Enter the Purchase date of the vehicle (MM-DD-YYYY)")))
+        custdata2.append(veh_purchase_date)
+
+        veh_service_count= int(input("Enter the count of  service"))
+        custdata2.append(veh_service_count)
+
+        veh_km_run= int(input("Enter the KM of the vehicle"))
+        custdata2.append(veh_km_run)
+
+        def cust_complaint_list():
+            while True:
+                print("1. Oil Change")
+                print("2. Air Filter")
+                print("3. Oil filter")
+                print("4.Wheel Balance")
+                print("5.Tyre Change")
+                choice = 0
+
+                cost = []
+                while choice <= 5:
+                    choice = int(input("Enter the Complaint number from the list"))
+                    if choice == 1:
+                        oil = int(input("enter the cost of oil change"))
+                        cost.append(oil)
+
+                    elif choice == 2:
+                        air_f = int(input("Enter the cost of Air filter"))
+                        cost.append(air_f)
+
+                    elif choice == 3:
+                        oil_f = int(input("Enter the cost of Oil filter"))
+                        cost.append(oil_f)
+
+                    elif choice == 4:
+                        wheel_bal = int(input("Enter the Cost of wheel Balance"))
+                        cost.append(wheel_bal)
+                    elif choice == 5:
+                        tyre = int(input("Enter the cost of tyre change"))
+                        cost.append(tyre)
+                    else:
+                        print("enter the invaild number")
+                else:
+                    print("invalid number")
+
+                labour_cost=int(input("Enter the labour cost for the vehicle"))
+                count = sum(cost)+labour_cost
+                return count
+
+        if veh_service_count == 1 and (veh_km_run > 1500 and veh_km_run < 10000):
+            print(" General Checkup")
+            amount = cust_complaint_list()
+            print("cost of service", amount)
+            custdata2.append(amount)
+
+
+        elif veh_service_count == 2 and (veh_km_run > 10000 and veh_km_run < 20000):
+
+            amount = cust_complaint_list()
+            print("cost of service", amount)
+            custdata2.append(amount)
+
+        elif veh_service_count == 3 and (veh_km_run > 20000 and veh_km_run < 30000):
+            # print("oil change,oil filter ,air filter ,general checkup ")
+            amount=cust_complaint_list()
+            print("cost of service", amount)
+            custdata2.append(amount)
+        else:
+            print("No Free services is available for this vehicle")
+        print(custdata2)
+        sql1 = '''insert into servicedetails(custid,purchase_date,freeservice_count,veh_km,cost_of_service)
+                                  values (%s,%s,%s,%s,%s)'''
+        mycursor.execute(sql1, custdata2)
+        conn.commit()
+        print("service data sucessfully added")
+        mycursor.close()
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        print("completed")
+        conn.close()
+
+def viewservice():
+    try:
+        conn, mycursor = connect_to_datebase()
+        customerid=input("Enter the Customer id")
+        mycursor.execute('''SELECT s.custid,c.custname,s.purchase_date,s.freeservice_count,s.veh_km,s.cost_of_service from servicedetails s  JOIN customerdetails c ON  s.custid=c.custid where custid = %s;
+        ''',(customerid,))
+        services = mycursor.fetchall()
+        conn.commit()
+
+        print("Service List")
+        for service in services:
+            print(f"id: {service[0]},custname:{service[1]},purchase_date:{service[2]},freeservice_count:{service[3]},veh_km:{service[4]},cost_of_service:{service[5]}")
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        print("completed")
+        conn.close()
+
+def schedule_appointment():
+    try:
+        conn, mycursor = connect_to_datebase()
+
+        custdata3 =[]
+        customer_id =int(input("Enter the customer id"))
+        custdata3.append(customer_id)
+        date =input("Enter the date (MM/DD/YYYY):")
+        custdata3.append(date)
+        status= input("Enter the status (scheduled/completed)")
+        custdata3.append(status)
+
+        print(custdata3)
+
+        sql3 = '''insert into schedule_appointment(custid,app_date,app_status) values (%s,%s,%s)'''
+        mycursor.execute(sql3, custdata3)
+
+        conn.commit()
+        print("Appointment is booked" )
+        mycursor.close()
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        print("Appointment is successfully booked")
+        conn.close()
+
+def view_schedule_appointment():
+    try:
+        conn, mycursor = connect_to_datebase()
+        mycursor.execute('''SELECT s.custid,c.custname,c.Address,c.vehicle_type,c.vehicle_number,s.app_date,s.app_status from schedule_appointment s  JOIN customerdetails c ON  s.custid=c.custid;
+                ''')
+        services = mycursor.fetchall()
+        conn.commit()
+        print("Service List")
+        for service in services:
+            print(f"id: {service[0]},custname:{service[1]},Address:{service[2]},vehicle_type:{service[3]},Vehicle_number:{service[4]},date:{service[5]},status:{service[6]}")
+    except Exception as e:
+        print(e)
+    finally:
+        print("View completed")
+        conn.close()
+
+
+def generate_bill():
+    try:
+
+        customerid=int(input("Enter the customer id "))
+
+
+
+
+        conn, mycursor = connect_to_datebase()
+
+        mycursor.execute('''select sum(cost_of_service) AS total_cost from servicedetails where custid = %s''',(customerid,))
+
+        total_cost=mycursor.fetchall()[0]
+        total_value=list(total_cost)
+
+
+        date = datetime.now().date()
+
+
+        mycursor.execute('''INSERT INTO Invoices (custid, total_cost, in_date) VALUES (%s, %s, %s)''', (customerid, total_value[0], date))
+
+        conn.commit()
+        print(f"Invoice generated successfully for Customer ID {customerid} with Total Cost: {total_value}")
+        mycursor.close()
+    except Exception as e:
+        print(e)
+    finally:
+        print("Bill ready")
+        conn.close()
+
+
+
+
+
+
+def main_menu():
+    while True:
+        print("1.AddCustomer")
+        print("2.Viewcustomer")
+        print("3.services")
+        print("4.viewservice")
+        print("5.Schedule")
+        print("6.view schedule")
+        print("7.billing")
+        print("8.exist")
+
+        choice=int(input("Enter the choice"))
+        if choice == 1:
+            addcustomer()
+        elif choice == 2:
+            viewcustomer()
+        elif choice == 3:
+            services()
+        elif choice == 4:
+            viewservice()
+        elif choice == 5:
+            schedule_appointment()
+        elif choice == 6:
+            view_schedule_appointment()
+        elif choice == 7:
+            generate_bill()
+        elif choice == 8:
+            print("Exist ")
+            break
+        else:
+            print("Enter the vaild number")
+
+
+
+if __name__ == "__main__":
+    main_menu()
+
+
+
